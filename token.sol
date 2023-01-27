@@ -23,11 +23,11 @@ contract CoinPocket is ERC20 {
         } else if (getConversionRate(msg.value) >= 20000 * 10 ** 18) {
             ROI[msg.sender] = 4;
             withdrawDuration[msg.sender] = 6 days;
-        } else if (getConversionRate(msg.value) >= 5000 * 10 ** 18)
+        } else if (getConversionRate(msg.value) >= 5000 * 10 ** 18) {
             ROI[msg.sender] = 3;
             withdrawDuration[msg.sender] = 6 days;
-        } else if (getConversionRate(msg.value) >= 300 * 10 ** 18)
-            ROI[msg.sender] = 2.5;
+        } else if (getConversionRate(msg.value) >= 300 * 10 ** 18) {
+            ROI[msg.sender] = 2;
             withdrawDuration[msg.sender] = 6 days;
         }
     }
@@ -52,7 +52,7 @@ contract CoinPocket is ERC20 {
         require(address(this).balance > 0, "The contract has no ether to withdraw");
 
         // Send all ether held by the contract to the owner's address
-        msg.sender.transfer(address(this).balance);
+        payable(msg.sender).transfer(address(this).balance);
     }
     
     function receive() external payable {
@@ -60,8 +60,8 @@ contract CoinPocket is ERC20 {
         investments[msg.sender] += msg.value;
     }
 
-    function() external payable {
-        receive();
+    function fallback() external payable {
+        // receive();
     }
     
     function getPrice() internal view returns (uint256) {
