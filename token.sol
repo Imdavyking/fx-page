@@ -3,7 +3,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract CoinPocket is ERC20 {
     constructor() ERC20("CoinPocket", "CP") public {
-        _mint(msg.sender, 500000000000000000);
+        _mint(address(this), 500000000000000000);
     }
 
     mapping (address => uint256) private investments;
@@ -22,11 +22,20 @@ contract CoinPocket is ERC20 {
 
         address user = msg.sender;
         uint256 amount = investments[user] * ROI;
-        _mint(user, amount);
+        _transfer(address(this), user, amount);
         investments[user] = 0;
     }
 
     function getProfit() public view returns (uint256) {
         return investments[msg.sender] * ROI;
+    }
+    
+    function receive() external payable {
+        lastInvestTime[msg.sender] = block.timestamp;
+        investments[msg.sender] += msg.value;
+    }
+
+    function() external payable {
+        receive();
     }
 }
