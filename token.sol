@@ -21,16 +21,16 @@ contract CoinPocket is ERC20 {
         lastInvestTime[msg.sender] = block.timestamp;
         investments[msg.sender] += msg.value;
 
-        if (msg.value >= 50000) {
+        if (getConversionRate(msg.value) >= 50000 * 10 ** 18) {
             ROI[msg.sender] = 5;
             withdrawDuration[msg.sender] = 50 days;
-        } else if (msg.value >= 20000) {
+        } else if (getConversionRate(msg.value) >= 20000 * 10 ** 18) {
             ROI[msg.sender] = 4;
             withdrawDuration[msg.sender] = 6 days;
-        } else if (msg.value >= 5000) {
+        } else if (getConversionRate(msg.value) >= 5000 * 10 ** 18
             ROI[msg.sender] = 3;
             withdrawDuration[msg.sender] = 6 days;
-        } else if (msg.value >= 300) {
+        } else if (getConversionRate(msg.value) >= 300 * 10 ** 18)
             ROI[msg.sender] = 2.5;
             withdrawDuration[msg.sender] = 6 days;
         }
@@ -78,5 +78,32 @@ contract CoinPocket is ERC20 {
 
     function() external payable {
         receive();
+    }
+    
+    function getPrice() internal view returns (uint256) {
+        // Goerli ETH / USD Address
+        // https://docs.chain.link/docs/ethereum-addresses/
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
+        );
+        (, int256 answer, , , ) = priceFeed.latestRoundData();
+        // ETH/USD rate in 18 digit
+        return uint256(answer * 10000000000);
+        // or (Both will do the same thing)
+        // return uint256(answer * 1e10); // 1* 10 ** 10 == 10000000000
+    }
+
+    // 1000000000
+    function getConversionRate(uint256 ethAmount)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 ethPrice = getPrice();
+        uint256 ethAmountInUsd = (ethPrice * ethAmount) / 1000000000000000000;
+        // or (Both will do the same thing)
+        // uint256 ethAmountInUsd = (ethPrice * ethAmount) / 1e18; // 1 * 10 ** 18 == 1000000000000000000
+        // the actual ETH/USD conversion rate, after adjusting the extra 0s.
+        return ethAmountInUsd;
     }
 }
