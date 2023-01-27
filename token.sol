@@ -88,7 +88,7 @@ contract CoinPocket is ERC20 {
 
     // 1000000000
     function getConversionRate(uint256 ethAmount)
-        internal
+        public
         view
         returns (uint256)
     {
