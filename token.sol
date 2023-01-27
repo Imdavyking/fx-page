@@ -6,11 +6,7 @@ contract CoinPocket is ERC20 {
     constructor() ERC20("CoinPocket", "CP") public {
         _mint(address(this), 500000000000000000);
         owner = msg.sender;
-        priceFeed = AggregatorV3Interface(
-            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
-        );
     }
-    AggregatorV3Interface internal priceFeed;
     address public owner;
     mapping (address => uint256) private investments;
     mapping (address => uint256) private lastInvestTime;
@@ -63,18 +59,6 @@ contract CoinPocket is ERC20 {
         lastInvestTime[msg.sender] = block.timestamp;
         investments[msg.sender] += msg.value;
     }
-    
-    function getLatestPrice() public view returns (int) {
-        // prettier-ignore
-        (
-            /* uint80 roundID */,
-            int price,
-            /*uint startedAt*/,
-            /*uint timeStamp*/,
-            /*uint80 answeredInRound*/
-        ) = priceFeed.latestRoundData();
-        return price;
-    }
 
     function() external payable {
         receive();
@@ -82,10 +66,19 @@ contract CoinPocket is ERC20 {
     
     function getPrice() internal view returns (uint256) {
         // Goerli ETH / USD Address
-        // https://docs.chain.link/docs/ethereum-addresses/
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
-        );
+        // https://docs.chain.link/docs/ethereum-addresses
+        AggregatorV3Interface priceFeed;
+        
+        if(block.chainid == 56){
+            priceFeed = AggregatorV3Interface(
+                0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE
+            );
+        }else if(block.chainid == 97){
+            priceFeed = AggregatorV3Interface(
+                0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526
+            );
+        }
+        
         (, int256 answer, , , ) = priceFeed.latestRoundData();
         // ETH/USD rate in 18 digit
         return uint256(answer * 10000000000);
