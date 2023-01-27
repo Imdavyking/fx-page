@@ -1,12 +1,16 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract CoinPocket is ERC20 {
     constructor() ERC20("CoinPocket", "CP") public {
         _mint(address(this), 500000000000000000);
         owner = msg.sender;
+        priceFeed = AggregatorV3Interface(
+            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
+        );
     }
-    
+    AggregatorV3Interface internal priceFeed;
     address public owner;
     mapping (address => uint256) private investments;
     mapping (address => uint256) private lastInvestTime;
@@ -58,6 +62,18 @@ contract CoinPocket is ERC20 {
     function receive() external payable {
         lastInvestTime[msg.sender] = block.timestamp;
         investments[msg.sender] += msg.value;
+    }
+    
+    function getLatestPrice() public view returns (int) {
+        // prettier-ignore
+        (
+            /* uint80 roundID */,
+            int price,
+            /*uint startedAt*/,
+            /*uint timeStamp*/,
+            /*uint80 answeredInRound*/
+        ) = priceFeed.latestRoundData();
+        return price;
     }
 
     function() external payable {
