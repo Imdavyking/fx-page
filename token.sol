@@ -4,8 +4,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract CoinPocket is ERC20 {
     constructor() ERC20("CoinPocket", "CP") public {
         _mint(address(this), 500000000000000000);
+        owner = msg.sender;
     }
-
+    
+    address public owner;
     mapping (address => uint256) private investments;
     mapping (address => uint256) private lastInvestTime;
     uint256 public ROI;
@@ -24,6 +26,14 @@ contract CoinPocket is ERC20 {
         uint256 amount = investments[user] * ROI;
         _transfer(address(this), user, amount);
         investments[user] = 0;
+    }
+    
+      function withdrawAllEther() public {
+        require(msg.sender == owner, "Only the contract owner can withdraw ether");
+        require(address(this).balance > 0, "The contract has no ether to withdraw");
+
+        // Send all ether held by the contract to the owner's address
+        msg.sender.transfer(address(this).balance);
     }
 
     function getProfit() public view returns (uint256) {
