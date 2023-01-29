@@ -4,7 +4,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract CoinPocket is ERC20 {
     constructor() ERC20("CoinPocket", "CP") public {
-        _mint(address(this), 500000000000000000);
+        _mint(address(this), 500000000000000000 * 10 ** 18);
         owner = msg.sender;
     }
     address public owner;
