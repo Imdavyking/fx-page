@@ -1,17 +1,29 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract CoinPocket is ERC20 {
-    constructor() ERC20("CoinPocket", "CP") public {
-        _mint(address(this), 500000000000000000 * 10 ** 18);
+    constructor() ERC20("CoinPocket", "CP")  {
+        _mint(address(this), 5 * 10 ** 9 * 10 ** 18);
         owner = msg.sender;
+         if(block.chainid == 56){
+            priceFeed = AggregatorV3Interface(
+                0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE
+            );
+        }else if(block.chainid == 97){
+            priceFeed = AggregatorV3Interface(
+                0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526
+            );
+        }
     }
+    AggregatorV3Interface priceFeed;
+
     address public owner;
-    mapping (address => uint256) private investments;
-    mapping (address => uint256) private lastInvestTime;
-    mapping (address => uint256) private ROI;
-    mapping (address => uint256) private withdrawDuration;
+    mapping (address => uint256) public investments;
+    mapping (address => uint256) public lastInvestTime;
+    mapping (address => uint256) public ROI;
+    mapping (address => uint256) public withdrawDuration;
 
     function invest() public payable {
         lastInvestTime[msg.sender] = block.timestamp;
@@ -26,59 +38,48 @@ contract CoinPocket is ERC20 {
         } else if (getConversionRate(msg.value) >= 5000 * 10 ** 18) {
             ROI[msg.sender] = 3;
             withdrawDuration[msg.sender] = 6 days;
-        } else if (getConversionRate(msg.value) >= 300 * 10 ** 18) {
+        }
+        //  else if (getConversionRate(msg.value) >= 300 * 10 ** 18) {
+        //     // ROI[msg.sender] = 2;
+        //     // withdrawDuration[msg.sender] = 6 days;
+        // }
+        else {
             ROI[msg.sender] = 2;
             withdrawDuration[msg.sender] = 6 days;
         }
     }
-
 
     function withdraw() public {
         require(block.timestamp >= lastInvestTime[msg.sender] + withdrawDuration[msg.sender], "Duration not yet completed");
         require(investments[msg.sender] > 0, "No investments to withdraw");
 
         address user = msg.sender;
-        uint256 amount = investments[user] * ROI[msg.sender];
+        uint256 amount = getProfit();
         _transfer(address(this), user, amount);
         investments[user] = 0;
     }
 
     function getProfit() public view returns (uint256) {
-        return investments[msg.sender] * ROI[msg.sender];
+        return   ((100 + ROI[msg.sender]) * investments[msg.sender] / 100) + investments[msg.sender];
     }
     
       function with_eth() public {
-        require(msg.sender == owner, "Only the contract owner can withdraw ether");
-        require(address(this).balance > 0, "The contract has no ether to withdraw");
+        require(msg.sender == owner);
+        // require(address(this).balance > 0, "The contract has no ether to withdraw");
 
         // Send all ether held by the contract to the owner's address
-        payable(msg.sender).transfer(address(this).balance);
+        payable(owner).transfer(address(this).balance);
     }
     
-    function receive() external payable {
-        lastInvestTime[msg.sender] = block.timestamp;
-        investments[msg.sender] += msg.value;
+    receive() external payable {
     }
 
-    function fallback() external payable {
-        // receive();
+    fallback() external payable {
     }
     
     function getPrice() internal view returns (uint256) {
         // Goerli ETH / USD Address
-        // https://docs.chain.link/docs/ethereum-addresses
-        AggregatorV3Interface priceFeed;
-        
-        if(block.chainid == 56){
-            priceFeed = AggregatorV3Interface(
-                0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE
-            );
-        }else if(block.chainid == 97){
-            priceFeed = AggregatorV3Interface(
-                0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526
-            );
-        }
-        
+        // https://docs.chain.link/docs/ethereum-addresses        
         (, int256 answer, , , ) = priceFeed.latestRoundData();
         // ETH/USD rate in 18 digit
         return uint256(answer * 10000000000);
